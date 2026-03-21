@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: game_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - .env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: game_minio_init
+    depends_on:
+      - minio
+    env_file:
+      - .env
+    entrypoint: >
+      /bin/sh -c "
+      sleep 8;
+      mc alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      mc mb -p local/raw || true;
+      mc mb -p local/silver || true;
+      mc mb -p local/gold || true;
+      exit 0;
+      "
+
+  app:
+    image: python:3.11-slim
+    container_name: game_pipeline
+    working_dir: /app
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    command: >
+      /bin/sh -c "
+      pip install --no-cache-dir -r requirements.txt &&
+      python src/main.py
+      "
+    depends_on:
+      - minio
+
+  streamlit:
+    image: python:3.11-slim
+    container_name: game_streamlit
+    working_dir: /app
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    ports:
+      - "8501:8501"
+    command: >
+      /bin/sh -c "
+      pip install --no-cache-dir -r requirements.txt &&
+      streamlit run src/app/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
+      "
+    depends_on:
+      - minio
+
+volumes:
+  minio_data:
