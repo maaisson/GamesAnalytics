@@ -9,13 +9,13 @@ game-price-analytics/
 ├─ requirements.txt
 ├─ src/
 │  ├─ collectors/
-│  │  ├─ steam_collector.py
-│  │  └─ nuuvem_scraper.py
+│  │  ├─ get_app_list_steam.py
+│  │  └─ get_app_details_steam.py
 │  ├─ processors/
 │  │  ├─ normalize.py
 │  │  └─ compare_prices.py
 │  ├─ loaders/
-│  │  ├─ minio_client.py
+│  │  ├─ minio_loader.py
 │  │  └─ supabase_loader.py
 │  ├─ app/
 │  │  └─ streamlit_app.py
